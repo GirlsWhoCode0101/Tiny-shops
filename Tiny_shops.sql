@@ -2,113 +2,65 @@
 
 --1) Which product has the highest price? Only return a single row.
 
-SELECT
-	product_name,
-	price AS highest_price
-FROM
-	products
-WHERE
-	price = (
-	SELECT
-		MAX(price)
-	FROM
-		products);
+SELECT product_name, price AS highest_price
+FROM products
+WHERE price = (
+	SELECT MAX(price)
+	FROM products);
 
 --2) Which customer has made the most orders?
 	
 WITH total_orders AS (						
-SELECT
-	c.first_name first_name,				
-	c.last_name last_name,
-	COUNT(o.order_id) as number_of_orders	
-FROM
-	customers as c
-JOIN orders as o
+    SELECT c.first_name first_name,	c.last_name last_name, COUNT(o.order_id) as number_of_orders	
+    FROM customers as c
+    JOIN orders as o
 		USING (customer_id)
-GROUP BY
-	customer_id
-)
-SELECT
-	first_name,								
-	last_name,
-	number_of_orders
-FROM
-	total_orders							
-WHERE									
-	number_of_orders = (
-	SELECT
-		MAX(number_of_orders)
-	FROM
-		total_orders
-);
+    GROUP BY customer_id
+    )
+SELECT first_name, last_name, number_of_orders
+FROM    total_orders							
+WHERE number_of_orders = (
+	SELECT MAX(number_of_orders) 
+    FROM total_orders
+    );
 
 
 --3) What’s the total revenue per product?
 
-SELECT
-	o.product_id,
-	p.price,
-	p.price * SUM(o.quantity) AS total_revenue	
-FROM
-	products AS p
-JOIN											
-	order_items AS o
-		USING (product_id)
-GROUP BY									   
-	o.product_id,
-	p.price
-ORDER BY
-	o.product_id;     
+SELECT o.product_id, p.price, p.price * SUM(o.quantity) AS total_revenue	
+FROM products AS p
+JOIN order_items AS o
+	USING (product_id)
+GROUP BY o.product_id, p.price
+ORDER BY o.product_id;     
 
 --4) Find the day with the highest revenue.
 
 WITH revenue_by_date AS (							                              
-SELECT
-	o.order_date order_date,
-	p.price * SUM(oi.quantity) AS revenue_per_date
-FROM
-	order_items AS oi
-JOIN
-    orders AS o
-		USING (order_id)
-JOIN
-    products AS p
-		USING (product_id)
-GROUP BY
-	o.order_date,
-	p.product_id,
-	p.price
-)
-SELECT												
-	order_date,
-	revenue_per_date
-FROM
-	revenue_by_date
-WHERE
-	revenue_per_date = (							
-	SELECT
-		MAX(revenue_per_date)
-	FROM
-		revenue_by_date
-);
+    SELECT o.order_date order_date, p.price * SUM(oi.quantity) AS revenue_per_date
+    FROM order_items AS oi
+    JOIN orders AS o
+	    USING (order_id)
+    JOIN products AS p
+	    USING (product_id)
+    GROUP BY o.order_date, p.product_id, p.price
+    )
+SELECT order_date, revenue_per_date
+FROM revenue_by_date
+WHERE revenue_per_date = (							
+	SELECT MAX(revenue_per_date)
+	FROM revenue_by_date
+    );
 
 --5) Find the first order (by date) for each customer.
 
-SELECT
-	o.customer_id,
-	CONCAT(c.first_name || ' ' || c.last_name) full_name,
+SELECT o.customer_id, CONCAT(c.first_name || ' ' || c.last_name) full_name,
 	MIN(o.order_date) first_order
-FROM
-	orders AS o
-JOIN
-    customers AS c
-		USING (customer_id)
-GROUP BY
-	o.customer_id,
-	c.first_name,
-	c.last_name
-ORDER BY
-	o.customer_id;
+FROM orders AS o
+JOIN customers AS c
+	USING (customer_id)
+GROUP BY o.customer_id, c.first_name, c.last_name
+ORDER BY o.customer_id;
 
 --6) Find the top 3 customers who have ordered the most distinct products
 
